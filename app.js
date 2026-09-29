@@ -50,7 +50,9 @@ const lightRoot=new THREE.Group();
 const brandRoot=new THREE.Group();
 const glassRoot=new THREE.Group();
 const markerRoot=new THREE.Group();
-scene.add(scanRoot,floorRoot,wallRoot,ceilingRoot,lightRoot,brandRoot,glassRoot,markerRoot);
+const existingRoot=new THREE.Group();
+existingRoot.name='existing-building-layout';
+scene.add(scanRoot,floorRoot,wallRoot,existingRoot,ceilingRoot,lightRoot,brandRoot,glassRoot,markerRoot);
 
 scene.add(new THREE.HemisphereLight(0xffead0,0x11151a,1.2));
 const key=new THREE.DirectionalLight(0xffe0aa,1.2);key.position.set(-8,12,-4);scene.add(key);
@@ -145,6 +147,95 @@ function makeSprite(text,border){
   const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
 }
 
+
+/*
+ * Existing building layout reconstructed from the supplied leased-premises plan.
+ * Coordinates are mapped into the current OBJ/store coordinate system.
+ * This layer represents fixed walls/cores/door openings and is intentionally
+ * separate from the One Catch decorative finishes.
+ */
+function existingWallX(x1,x2,z,height=H*.90,material=null){
+  const m=material||mat(C.ivory2,.73,.01);
+  return box(existingRoot,Math.abs(x2-x1),height,.10,(x1+x2)/2,STORE.floor+height/2,z,m);
+}
+function existingWallZ(x,z1,z2,height=H*.90,material=null){
+  const m=material||mat(C.ivory2,.73,.01);
+  return box(existingRoot,.10,height,Math.abs(z2-z1),x,STORE.floor+height/2,(z1+z2)/2,m);
+}
+function doorLeafX(x,z,width=.92,openAngle=Math.PI*.36,flip=false){
+  const g=new THREE.Group();
+  const leaf=box(g,width,2.05,.045,(flip?-1:1)*width/2,1.025,0,mat(0x302b27,.46,.10));
+  const trim=box(g,width+.05,.045,.065,(flip?-1:1)*width/2,2.04,0,mat(C.obsidian,.40,.25));
+  g.position.set(x,STORE.floor,z);
+  g.rotation.y=(flip?-1:1)*openAngle;
+  existingRoot.add(g);
+  return g;
+}
+function doorLeafZ(x,z,width=.92,openAngle=Math.PI*.36,flip=false){
+  const g=new THREE.Group();
+  const leaf=box(g,.045,2.05,width,0,1.025,(flip?-1:1)*width/2,mat(0x302b27,.46,.10));
+  const trim=box(g,.065,.045,width+.05,0,2.04,(flip?-1:1)*width/2,mat(C.obsidian,.40,.25));
+  g.position.set(x,STORE.floor,z);
+  g.rotation.y=(flip?-1:1)*openAngle;
+  existingRoot.add(g);
+  return g;
+}
+function wallXWithDoor(x1,x2,z,doorX,doorW=.95,flip=false){
+  const gap=doorW/2+.035;
+  existingWallX(x1,doorX-gap,z);
+  existingWallX(doorX+gap,x2,z);
+  // header keeps the wall visually continuous above the opening
+  box(existingRoot,doorW+.08,H*.90-2.12,.10,doorX,STORE.floor+2.12+(H*.90-2.12)/2,z,mat(C.ivory2,.73,.01));
+  doorLeafX(doorX-gap,z+.025,doorW,Math.PI*.38,flip);
+}
+function wallZWithDoor(x,z1,z2,doorZ,doorW=.95,flip=false){
+  const gap=doorW/2+.035;
+  existingWallZ(x,z1,doorZ-gap);
+  existingWallZ(x,doorZ+gap,z2);
+  box(existingRoot,.10,H*.90-2.12,doorW+.08,x,STORE.floor+2.12+(H*.90-2.12)/2,doorZ,mat(C.ivory2,.73,.01));
+  doorLeafZ(x+.025,doorZ-gap,doorW,Math.PI*.38,flip);
+}
+function buildExistingLayout(){
+  const wall=mat(C.ivory2,.74,.01);
+  const core=mat(0x2a2b2d,.58,.05);
+
+  // 1. Front-left stair/service core: the lease boundary wraps around this
+  // existing common/core volume on the supplied plan.
+  const coreX0=STORE.x0+.30, coreX1=STORE.x0+3.28;
+  const coreZ0=STORE.z0+.18, coreZ1=STORE.z0+2.55;
+  existingWallX(coreX0,coreX1,coreZ1,H*.92,core);
+  existingWallZ(coreX1,coreZ0,coreZ1,H*.92,core);
+  // Low dark infill makes the excluded core immediately readable from above.
+  box(existingRoot,coreX1-coreX0,.08,coreZ1-coreZ0,(coreX0+coreX1)/2,STORE.floor+.05,(coreZ0+coreZ1)/2,mat(0x161719,.82,.02));
+
+  // 2. Existing room at the left/rear side, including its doorway.
+  wallXWithDoor(STORE.x0+.30,STORE.x0+5.25,STORE.z0+4.63,STORE.x0+4.12,.92,false);
+  existingWallZ(STORE.x0+5.25,STORE.z0+4.63,STORE.z0+6.72,H*.90,wall);
+
+  // 3. Small existing enclosure/niche adjoining that room.
+  existingWallX(STORE.x0+4.22,STORE.x0+5.25,STORE.z0+5.62,H*.90,wall);
+  wallZWithDoor(STORE.x0+4.22,STORE.z0+4.63,STORE.z0+5.62,STORE.z0+5.12,.82,true);
+
+  // 4. Two fixed longitudinal internal walls visible in the leased shop area.
+  // They intentionally stop short of the façade, as on the plan.
+  existingWallZ(STORE.x0+6.58,STORE.z0+4.75,STORE.z0+7.73,H*.90,wall);
+  existingWallZ(STORE.x0+9.58,STORE.z0+4.55,STORE.z0+7.55,H*.90,wall);
+
+  // 5. Rear/right separation with the existing door into the service side.
+  wallXWithDoor(STORE.x0+9.58,STORE.x1-.24,STORE.z0+7.55,STORE.x1-1.63,.92,true);
+  existingWallZ(STORE.x1-.24,STORE.z0+7.55,STORE.z1-.28,H*.90,wall);
+
+  // 6. Door/opening on the right-hand side of the leased unit.
+  // This is represented as a real opening + leaf rather than a painted symbol.
+  wallZWithDoor(STORE.x1-.24,STORE.z0+3.18,STORE.z0+5.10,STORE.z0+4.18,.92,false);
+
+  // Black skirting/reveal along fixed partitions, matching the current design language.
+  const sk=mat(C.obsidian,.48,.08);
+  existingWallX(STORE.x0+.30,STORE.x0+5.25,STORE.z0+4.63,.09,sk).position.y=STORE.floor+.065;
+  existingWallZ(STORE.x0+6.58,STORE.z0+4.75,STORE.z0+7.73,.09,sk).position.y=STORE.floor+.065;
+  existingWallZ(STORE.x0+9.58,STORE.z0+4.55,STORE.z0+7.55,.09,sk).position.y=STORE.floor+.065;
+}
+
 function buildDesign(){
   // Warm Ivory floor
   const tile=makeTile();
@@ -163,11 +254,8 @@ function buildDesign(){
   box(wallRoot,.07,H,D,STORE.x1-.04,STORE.floor+H/2,CZ,dark);
   box(wallRoot,W,H,.07,CX,STORE.floor+H/2,STORE.z1-.04,ivory2);
 
-  // Known long internal wall visible in scan around z=-4.8, x=-3..4.3.
-  const partitionZ=-4.82, partitionX=.62, partitionW=7.35;
-  box(wallRoot,partitionW,H*.90,.08,partitionX,STORE.floor+H*.45,partitionZ,ivory);
-  box(wallRoot,partitionW*.70,.46,.09,partitionX-.8,STORE.floor+.23,partitionZ-.05,dark);
-  emissive(brandRoot,partitionW*.82,.022,.028,partitionX,STORE.floor+1.08,partitionZ-.065,C.gold,1.0);
+  // Existing fixed internal walls and door openings come from the supplied lease plan.
+  buildExistingLayout();
 
   // Right-hand premium feature treatment.
   const stone=makeStone();
@@ -276,6 +364,7 @@ document.getElementById('scanToggle').addEventListener('change',e=>scanRoot.visi
 document.getElementById('scanOpacity').addEventListener('input',updateScanOpacity);
 document.getElementById('floorToggle').addEventListener('change',e=>floorRoot.visible=e.target.checked);
 document.getElementById('wallsToggle').addEventListener('change',e=>wallRoot.visible=e.target.checked);
+document.getElementById('existingToggle').addEventListener('change',e=>existingRoot.visible=e.target.checked);
 document.getElementById('ceilingToggle').addEventListener('change',e=>ceilingRoot.visible=e.target.checked);
 
 function setOpenRoof(enabled){

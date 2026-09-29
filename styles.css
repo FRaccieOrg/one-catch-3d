@@ -22,3 +22,7 @@ button:hover{color:var(--gold);border-color:var(--gold)}
 .palette i{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid rgba(255,255,255,.18)}
 .ivory{background:#f4eee3}.obsidian{background:#17181b}.gold{background:#c9a15a}.bronze{background:#8f653a}
 @media(max-width:850px){#app{grid-template-columns:1fr}.sidebar{position:absolute;z-index:10;width:290px;max-height:100%;opacity:.97}}
+
+.editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+.editor-grid button.active{border-color:#c9a15a;background:rgba(201,161,90,.16)}
+.editor-panel select{width:100%;margin-top:.35rem;padding:.55rem .6rem;border-radius:.45rem;border:1px solid rgba(255,255,255,.14);background:#17191d;color:#f4eee3}

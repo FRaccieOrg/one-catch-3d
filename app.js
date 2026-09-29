@@ -14,7 +14,7 @@ const C={
 // The complete scan is larger; this box tracks the principal retail volume visible in the supplied plan/photos.
 const STORE={
   x0:-7.15, x1:7.18,
-  z0:-9.72, z1:3.18,
+  z0:-9.72, z1:4.18,
   floor:-1.30,
   ceiling:1.10
 };
@@ -28,16 +28,18 @@ const H=STORE.ceiling-STORE.floor;
 // This polygon follows the yellow-highlighted store boundary from the supplied plan.
 // Coordinates are mapped to the existing OBJ coordinate frame.
 const STORE_POLYGON=[
-  new THREE.Vector2(-7.15, 3.05),  // rear-left
-  new THREE.Vector2(-2.95, 3.18),  // rear upper run
-  new THREE.Vector2(-0.25, 1.55),  // diagonal transition
-  new THREE.Vector2( 7.18, 1.55),  // rear-right
-  new THREE.Vector2( 7.18,-9.72),  // front-right
-  new THREE.Vector2(-2.20,-9.72),  // front-left of main shop
-  new THREE.Vector2(-2.20,-4.65),  // stair/core notch right edge
-  new THREE.Vector2(-7.15,-4.65)   // stair/core notch top-left
+  // Clockwise trace of the yellow-highlighted lease boundary in the supplied plan.
+  // The left/bottom rectangle is an adjacent stair/core volume and is NOT part of the shop.
+  new THREE.Vector2(-7.15, 3.18),  // A: upper-left corner
+  new THREE.Vector2(-2.86, 4.14),  // B: raised upper corner
+  new THREE.Vector2(-0.29, 2.44),  // C: end of diagonal return
+  new THREE.Vector2( 7.08, 2.48),  // D: long upper-right run
+  new THREE.Vector2( 7.18,-9.68),  // E: front-right
+  new THREE.Vector2(-2.29,-9.72),  // F: front-left of the actual shop frontage
+  new THREE.Vector2(-2.29,-4.95),  // G: up along right edge of stair/core exclusion
+  new THREE.Vector2(-7.15,-4.87)   // H: left along top of stair/core exclusion
 ];
-const FRONT_X0=-2.20;
+const FRONT_X0=-2.29;
 const FRONT_X1=7.18;
 
 const canvas=document.getElementById('scene');
@@ -345,6 +347,17 @@ function perimeterWall(parent,a,b,height,material,thickness=.09){
 function buildStorePerimeter(){
   const ivory=mat(C.ivory,.70,.01);
   const dark=mat(C.obsidian,.45,.08);
+
+  // Thin gold verification line follows the exact store polygon at floor level.
+  // This makes it immediately obvious in Top view where the leased-unit boundary runs.
+  const boundaryPts=STORE_POLYGON.map(p=>new THREE.Vector3(p.x,STORE.floor+.09,p.y));
+  boundaryPts.push(new THREE.Vector3(STORE_POLYGON[0].x,STORE.floor+.09,STORE_POLYGON[0].y));
+  const boundary=new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(boundaryPts),
+    new THREE.LineBasicMaterial({color:C.gold})
+  );
+  boundary.name='lease-boundary-outline';
+  wallRoot.add(boundary);
 
   // All yellow-highlighted boundary segments except the glazed front façade.
   for(let i=0;i<STORE_POLYGON.length;i++){

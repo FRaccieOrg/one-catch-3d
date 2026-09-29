@@ -1,0 +1,24 @@
+
+:root{--bg:#0b0d10;--panel:#12151a;--line:#2b3139;--gold:#c9a15a;--txt:#ece8e0;--muted:#969ea9}
+*{box-sizing:border-box}html,body,#app{height:100%;margin:0}
+body{background:var(--bg);color:var(--txt);font-family:Inter,Segoe UI,Arial,sans-serif;overflow:hidden}
+#app{display:grid;grid-template-columns:330px 1fr}
+.sidebar{overflow:auto;padding:18px;background:linear-gradient(#15181e,#0d0f13);border-right:1px solid var(--line)}
+.brand{display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:17px}
+.mark{width:43px;height:43px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:25px}
+.brand-name{font:15px Georgia,serif;letter-spacing:.09em}.brand-sub{color:var(--gold);font-size:10px;letter-spacing:.2em;margin-top:4px}
+.state{margin:14px 0;padding:10px;border:1px solid #27303a;border-radius:7px;background:#0d1116;color:#c7ccd2;font-size:12px}
+section{padding:13px 0;border-top:1px solid var(--line)}
+h3{font-size:11px;color:var(--gold);letter-spacing:.17em;text-transform:uppercase;margin:0 0 10px}
+label{display:block;font-size:13px;margin:8px 0;color:#d7dae0}
+input[type=checkbox]{accent-color:var(--gold)}input[type=range]{width:100%}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+button{background:#171b21;color:#eee;border:1px solid #353b44;border-radius:6px;padding:9px;cursor:pointer}
+button:hover{color:var(--gold);border-color:var(--gold)}
+.hint,li{font-size:12px;line-height:1.5;color:var(--muted)}ul{padding-left:18px}
+.viewer{position:relative;min-width:0}canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.topbar{position:absolute;z-index:3;top:14px;left:18px;right:18px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:.12em;color:#c9cdd4;pointer-events:none}
+.palette{position:absolute;z-index:3;right:18px;bottom:16px;background:rgba(12,14,17,.9);border:1px solid var(--line);border-radius:8px;padding:9px 11px;display:flex;align-items:center;gap:7px;font-size:10px;color:#bcc1c8}
+.palette i{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid rgba(255,255,255,.18)}
+.ivory{background:#f4eee3}.obsidian{background:#17181b}.gold{background:#c9a15a}.bronze{background:#8f653a}
+@media(max-width:850px){#app{grid-template-columns:1fr}.sidebar{position:absolute;z-index:10;width:290px;max-height:100%;opacity:.97}}

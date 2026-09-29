@@ -31,7 +31,7 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.08;
 renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;\nrenderer.localClippingEnabled=true;\n\n// Open-roof clipping plane: removes scan geometry above the interior ceiling line.\nconst roofClipPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),STORE.ceiling-.08);
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x0b0d10);
@@ -249,7 +249,7 @@ async function loadScan(){
         n.castShadow=false;n.receiveShadow=true;
         const mats=Array.isArray(n.material)?n.material:[n.material];
         mats.forEach(m=>{
-          m.transparent=true;m.opacity=.25;m.depthWrite=false;m.roughness=.72;
+          m.transparent=true;m.opacity=.25;m.depthWrite=false;m.roughness=.72;\n          m.clippingPlanes=[];
         });
       }
     });
@@ -277,6 +277,27 @@ document.getElementById('scanOpacity').addEventListener('input',updateScanOpacit
 document.getElementById('floorToggle').addEventListener('change',e=>floorRoot.visible=e.target.checked);
 document.getElementById('wallsToggle').addEventListener('change',e=>wallRoot.visible=e.target.checked);
 document.getElementById('ceilingToggle').addEventListener('change',e=>ceilingRoot.visible=e.target.checked);
+
+function setOpenRoof(enabled){
+  // Hide the designed ceiling entirely.
+  ceilingRoot.visible=!enabled && document.getElementById('ceilingToggle').checked;
+
+  // Clip the original scan above the ceiling line so a top/angled view can see inside.
+  scanRoot.traverse(n=>{
+    if(!n.isMesh) return;
+    const mats=Array.isArray(n.material)?n.material:[n.material];
+    mats.forEach(m=>{
+      m.clippingPlanes=enabled?[roofClipPlane]:[];
+      m.clipShadows=enabled;
+      m.needsUpdate=true;
+    });
+  });
+
+  // A slightly higher orbit limit makes overhead inspection easier while roof is open.
+  controls.maxPolarAngle=enabled?Math.PI*.62:Math.PI*.495;
+}
+
+document.getElementById('openRoofToggle').addEventListener('change',e=>setOpenRoof(e.target.checked));
 document.getElementById('lightToggle').addEventListener('change',e=>lightRoot.visible=e.target.checked);
 document.getElementById('brandToggle').addEventListener('change',e=>brandRoot.visible=e.target.checked);
 document.getElementById('glassToggle').addEventListener('change',e=>glassRoot.visible=e.target.checked);

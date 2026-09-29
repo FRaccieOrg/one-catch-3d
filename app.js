@@ -262,10 +262,10 @@ function addChair(x,z,ry=0){
 function buildFurniture(){
   furnitureRoot.clear();
 
-  // Front / retail display run
-  addDisplayCase(-5.55,-8.95,1.7,.55,1.25,0);
-  addDisplayCase(-3.55,-8.95,1.7,.55,1.25,0);
-  addDisplayCase(-1.55,-8.95,1.7,.55,1.25,0);
+  // Front / retail display run — only on the actual One Catch frontage.
+  addDisplayCase(-1.20,-8.95,1.55,.55,1.25,0);
+  addDisplayCase(0.75,-8.95,1.55,.55,1.25,0);
+  addDisplayCase(2.70,-8.95,1.55,.55,1.25,0);
 
   // Premium slab / raw card display on right wall
   addDisplayCase(6.55,-5.95,1.6,.5,1.3,Math.PI/2);
@@ -284,52 +284,36 @@ function buildFurniture(){
     addChair(x+.95,z,-Math.PI/2);
   }
 
-  // Rear accessory/sealed display
-  addDisplayCase(.8,2.45,2.0,.5,1.25,0);
-  addDisplayCase(3.15,2.45,2.0,.5,1.25,0);
+  // Rear accessory/sealed display, inside the sloped/recessed rear boundary.
+  addDisplayCase(.8,1.05,1.8,.5,1.25,0);
+  addDisplayCase(3.15,1.05,1.8,.5,1.25,0);
 }
 
 function buildExistingLayout(){
   const wall=mat(C.ivory2,.74,.01);
-  const core=mat(0x2a2b2d,.58,.05);
-
-  // 1. Front-left stair/service core: the lease boundary wraps around this
-  // existing common/core volume on the supplied plan.
-  const coreX0=STORE.x0+.30, coreX1=STORE.x0+3.28;
-  const coreZ0=STORE.z0+.18, coreZ1=STORE.z0+2.55;
-  existingWallX(coreX0,coreX1,coreZ1,H*.92,core);
-  existingWallZ(coreX1,coreZ0,coreZ1,H*.92,core);
-  // Low dark infill makes the excluded core immediately readable from above.
-  box(existingRoot,coreX1-coreX0,.08,coreZ1-coreZ0,(coreX0+coreX1)/2,STORE.floor+.05,(coreZ0+coreZ1)/2,mat(0x161719,.82,.02));
-
-  // 2. Existing room at the left/rear side, including its doorway.
-  wallXWithDoor(STORE.x0+.30,STORE.x0+5.25,STORE.z0+4.63,STORE.x0+4.12,.92,false);
-  existingWallZ(STORE.x0+5.25,STORE.z0+4.63,STORE.z0+6.72,H*.90,wall);
-
-  // 3. Small existing enclosure/niche adjoining that room.
-  existingWallX(STORE.x0+4.22,STORE.x0+5.25,STORE.z0+5.62,H*.90,wall);
-  wallZWithDoor(STORE.x0+4.22,STORE.z0+4.63,STORE.z0+5.62,STORE.z0+5.12,.82,true);
-
-  // 4. Two fixed longitudinal internal walls visible in the leased shop area.
-  // They intentionally stop short of the façade, as on the plan.
-  existingWallZ(STORE.x0+6.58,STORE.z0+4.75,STORE.z0+7.73,H*.90,wall);
-  existingWallZ(STORE.x0+9.58,STORE.z0+4.55,STORE.z0+7.55,H*.90,wall);
-
-  // 5. Rear/right separation with the existing door into the service side.
-  wallXWithDoor(STORE.x0+9.58,STORE.x1-.24,STORE.z0+7.55,STORE.x1-1.63,.92,true);
-  existingWallZ(STORE.x1-.24,STORE.z0+7.55,STORE.z1-.28,H*.90,wall);
-
-  // 6. Door/opening on the right-hand side of the leased unit.
-  // This is represented as a real opening + leaf rather than a painted symbol.
-  wallZWithDoor(STORE.x1-.24,STORE.z0+3.18,STORE.z0+5.10,STORE.z0+4.18,.92,false);
-
-  // Black skirting/reveal along fixed partitions, matching the current design language.
   const sk=mat(C.obsidian,.48,.08);
-  existingWallX(STORE.x0+.30,STORE.x0+5.25,STORE.z0+4.63,.09,sk).position.y=STORE.floor+.065;
-  existingWallZ(STORE.x0+6.58,STORE.z0+4.75,STORE.z0+7.73,.09,sk).position.y=STORE.floor+.065;
-  existingWallZ(STORE.x0+9.58,STORE.z0+4.55,STORE.z0+7.55,.09,sk).position.y=STORE.floor+.065;
-}
 
+  // Fixed partitions visible INSIDE the yellow One Catch boundary.
+  // Adjacent mall/service spaces are intentionally not reconstructed here.
+
+  // Left internal room wall, running from the store's left boundary toward the centre.
+  // Door opening is retained close to the right end, as shown on the supplied plan.
+  wallXWithDoor(-7.02,-0.15,-2.28,-2.05,.92,false);
+
+  // Small enclosed niche/room attached to the right end of that wall.
+  existingWallX(-1.58,-0.15,-4.18,H*.90,wall);
+  wallZWithDoor(-1.58,-4.18,-2.28,-3.45,.82,true);
+  existingWallZ(-0.15,-4.18,-2.28,H*.90,wall);
+
+  // Two long fixed partitions through the main sales floor.
+  existingWallZ(0.10,-7.25,1.05,H*.90,wall);
+  existingWallZ(4.55,-7.25,1.05,H*.90,wall);
+
+  // Dark skirting/reveal on the fixed partitions.
+  existingWallX(-7.02,-0.15,-2.28,.09,sk).position.y=STORE.floor+.065;
+  existingWallZ(0.10,-7.25,1.05,.09,sk).position.y=STORE.floor+.065;
+  existingWallZ(4.55,-7.25,1.05,.09,sk).position.y=STORE.floor+.065;
+}
 
 function polygonHorizontal(parent,points,y,material,thickness=.045){
   const shape=new THREE.Shape();

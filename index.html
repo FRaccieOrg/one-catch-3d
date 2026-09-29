@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>One Catch Company — 3D Interior Design</title>
+  <meta name="theme-color" content="#0b0d10">
+  <style>
+    :root{--bg:#0b0d10;--panel:#12151a;--line:#2b3139;--gold:#c9a15a;--bronze:#8f653a;--ivory:#f4eee3;--txt:#ece8e0;--muted:#969ea9}
+    *{box-sizing:border-box}
+    html,body,#app{height:100%;margin:0}
+    body{background:var(--bg);color:var(--txt);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;overflow:hidden}
+    #app{display:grid;grid-template-columns:330px 1fr}
+    aside{overflow:auto;padding:18px;background:linear-gradient(#15181e,#0d0f13);border-right:1px solid var(--line);z-index:5}
+    .brand{display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:17px}
+    .mark{width:43px;height:43px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-size:25px}
+    .brand-name{font:15px Georgia,serif;letter-spacing:.09em}
+    .brand-sub{color:var(--gold);font-size:10px;letter-spacing:.2em;margin-top:4px}
+    .state{margin:14px 0;padding:10px;border:1px solid #27303a;border-radius:7px;background:#0d1116;color:#c7ccd2;font-size:12px;line-height:1.45}
+    section{padding:13px 0;border-top:1px solid var(--line)}
+    h3{font-size:11px;color:var(--gold);letter-spacing:.17em;text-transform:uppercase;margin:0 0 10px}
+    label{display:block;font-size:13px;margin:8px 0;color:#d7dae0}
+    input[type=checkbox]{accent-color:var(--gold)}
+    .buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+    button{background:#171b21;color:#eee;border:1px solid #353b44;border-radius:6px;padding:9px;cursor:pointer}
+    button:hover{color:var(--gold);border-color:var(--gold)}
+    .hint,li{font-size:12px;line-height:1.5;color:var(--muted)}
+    ul{padding-left:18px}
+    main{position:relative;min-width:0}
+    canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+    .topbar{position:absolute;z-index:3;top:14px;left:18px;right:18px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:.12em;color:#c9cdd4;pointer-events:none}
+    .palette{position:absolute;z-index:3;right:18px;bottom:16px;background:rgba(12,14,17,.9);border:1px solid var(--line);border-radius:8px;padding:9px 11px;display:flex;align-items:center;gap:7px;font-size:10px;color:#bcc1c8}
+    .palette i{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid rgba(255,255,255,.18)}
+    .ivory{background:#f4eee3}.obsidian{background:#17181b}.gold{background:#c9a15a}.bronze{background:#8f653a}
+    .mobile-toggle{display:none}
+    @media(max-width:850px){
+      #app{grid-template-columns:1fr}
+      aside{position:absolute;left:0;top:0;bottom:0;width:290px;transform:translateX(-100%);transition:.22s ease;box-shadow:12px 0 30px rgba(0,0,0,.32)}
+      aside.open{transform:translateX(0)}
+      .mobile-toggle{display:block;position:absolute;z-index:6;left:12px;top:12px;width:42px;height:42px;border-radius:50%;background:#11151a;border:1px solid #3a4049;color:var(--gold)}
+      .topbar{left:64px}
+      .palette{left:12px;right:auto;bottom:12px;max-width:calc(100% - 24px);flex-wrap:wrap}
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports":{
+      "three":"https://unpkg.com/three@0.180.0/build/three.module.js",
+      "three/addons/":"https://unpkg.com/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="mark">◯</div>
+      <div>
+        <div class="brand-name">ONE CATCH COMPANY</div>
+        <div class="brand-sub">3D INTERIOR DESIGN</div>
+      </div>
+    </div>
+    <div class="state">Online architectural design pass. Geen vitrines, kassa, tafels, stoelen of ander winkelmeubilair in deze fase.</div>
+    <section>
+      <h3>View</h3>
+      <div class="buttons">
+        <button data-view="hero">Hero</button>
+        <button data-view="entrance">Entrance</button>
+        <button data-view="play">Play Area</button>
+        <button data-view="top">Top</button>
+      </div>
+    </section>
+    <section>
+      <h3>Design layers</h3>
+      <label><input type="checkbox" data-layer="floor" checked> Warm Ivory vloer</label>
+      <label><input type="checkbox" data-layer="walls" checked> Wandafwerking</label>
+      <label><input type="checkbox" data-layer="ceiling" checked> Obsidian plafond</label>
+      <label><input type="checkbox" data-layer="lighting" checked> Warme architecturale verlichting</label>
+      <label><input type="checkbox" data-layer="branding" checked> Bronze / gold / branding</label>
+      <label><input type="checkbox" data-layer="glass" checked> Glazen voorgevel</label>
+      <label><input type="checkbox" data-layer="markers"> Entrance / toilet / safe</label>
+    </section>
+    <section>
+      <h3>Vaste correcties</h3>
+      <ul>
+        <li>Entrance: onderaan rechts bij ENTREE.</li>
+        <li>Toilet: locatie van het eerste groene kruis.</li>
+        <li>Safe: groene kruis in de oranje gemarkeerde zone.</li>
+        <li>Zone 3: Play Area.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Design language</h3>
+      <p class="hint">Warm Ivory grote tegels, Obsidian plafond, 2700–3000K licht, zwarte steen, verticale bronze lamellen en Antique Gold branding.</p>
+    </section>
+  </aside>
+
+  <main>
+    <button class="mobile-toggle" id="menuBtn">☰</button>
+    <canvas id="scene"></canvas>
+    <div class="topbar"><span>ONE CATCH COMPANY · ARCHITECTURAL DESIGN</span><span id="coords"></span></div>
+    <div class="palette">
+      <span>Warm Ivory</span><i class="ivory"></i>
+      <span>Obsidian</span><i class="obsidian"></i>
+      <span>Antique Gold</span><i class="gold"></i>
+      <span>Bronze</span><i class="bronze"></i>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const C={ivory:0xf4eee3,ivory2:0xe5dacb,obsidian:0x17181b,charcoal:0x24262a,gold:0xc9a15a,bronze:0x8f653a,light:0xffd59a,glass:0x9eb2bb};
+const STORE={x0:-7.15,x1:7.18,z0:-9.72,z1:3.18,floor:-1.30,ceiling:1.10};
+const CX=(STORE.x0+STORE.x1)/2,CZ=(STORE.z0+STORE.z1)/2,W=STORE.x1-STORE.x0,D=STORE.z1-STORE.z0,H=STORE.ceiling-STORE.floor;
+
+const canvas=document.getElementById("scene");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.08;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0b0d10);
+scene.fog=new THREE.Fog(0x0b0d10,27,52);
+
+const camera=new THREE.PerspectiveCamera(47,1,.02,140);
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true;
+controls.dampingFactor=.065;
+controls.maxPolarAngle=Math.PI*.495;
+controls.minDistance=2.5;
+controls.maxDistance=42;
+
+scene.add(new THREE.HemisphereLight(0xffead0,0x11151a,1.25));
+const key=new THREE.DirectionalLight(0xffe0aa,1.15);key.position.set(-8,12,-4);scene.add(key);
+
+const layers={};
+for(const name of ["floor","walls","ceiling","lighting","branding","glass","markers"]){layers[name]=new THREE.Group();layers[name].name=name;scene.add(layers[name])}
+
+function mat(color,rough=.55,metal=.02,extra={}){return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal,...extra})}
+function box(parent,w,h,d,x,y,z,m){const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);q.position.set(x,y,z);q.castShadow=true;q.receiveShadow=true;parent.add(q);return q}
+function plane(parent,w,h,x,y,z,ry,m){const q=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);q.position.set(x,y,z);q.rotation.y=ry;parent.add(q);return q}
+function emissive(parent,w,h,d,x,y,z,color=C.light,intensity=4){return box(parent,w,h,d,x,y,z,new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:intensity,roughness:.4}))}
+function canvasTexture(draw,w=1024,h=1024){const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");draw(g,w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;return t}
+function tileTexture(){const t=canvasTexture((g,w,h)=>{g.fillStyle="#eee5d7";g.fillRect(0,0,w,h);const s=w/5;g.strokeStyle="rgba(100,90,80,.22)";g.lineWidth=3;for(let i=0;i<=5;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,h);g.stroke();g.beginPath();g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke()}for(let i=0;i<70;i++){g.strokeStyle="rgba(104,91,73,"+(.012+Math.random()*.025)+")";g.beginPath();const y=Math.random()*h;g.moveTo(0,y);g.bezierCurveTo(w*.3,y+Math.random()*18,w*.65,y-Math.random()*18,w,y+Math.random()*8);g.stroke()}});t.repeat.set(W/3,D/3);return t}
+function stoneTexture(){const t=canvasTexture((g,w,h)=>{g.fillStyle="#141517";g.fillRect(0,0,w,h);for(let i=0;i<28;i++){g.strokeStyle="rgba(198,174,139,"+(.015+Math.random()*.025)+")";g.lineWidth=1+Math.random();g.beginPath();let y=Math.random()*h;g.moveTo(0,y);for(let x=0;x<w;x+=80){y+=(Math.random()-.5)*34;g.lineTo(x,y)}g.stroke()}});t.repeat.set(2,2);return t}
+function ceilingTexture(){const t=canvasTexture((g,w,h)=>{g.fillStyle="#1d1e22";g.fillRect(0,0,w,h);g.strokeStyle="rgba(210,210,210,.13)";g.lineWidth=3;const c=w/6;for(let i=0;i<=6;i++){g.beginPath();g.moveTo(i*c,0);g.lineTo(i*c,h);g.stroke();g.beginPath();g.moveTo(0,i*c);g.lineTo(w,i*c);g.stroke()}});t.repeat.set(W/5,D/5);return t}
+function logoTexture(){return canvasTexture((g,w,h)=>{g.clearRect(0,0,w,h);g.textAlign="center";g.textBaseline="middle";g.fillStyle="#d5b46c";g.font="88px Georgia";g.fillText("ONE CATCH",w/2,h*.44);g.font="34px Arial";g.fillText("C O M P A N Y",w/2,h*.60)},1536,768)}
+function slatsX(cx,cz,width,height){const n=Math.round(width/.16),step=width/n,m=mat(C.bronze,.34,.5);for(let i=0;i<n;i++)box(layers.branding,.052,height,.06,cx-width/2+(i+.5)*step,STORE.floor+height/2+.10,cz,m);emissive(layers.lighting,width,.025,.025,cx,STORE.floor+.13,cz+.04,C.light,5)}
+function slatsZ(cx,cz,width,height){const n=Math.round(width/.16),step=width/n,m=mat(C.bronze,.34,.5);for(let i=0;i<n;i++)box(layers.branding,.06,height,.052,cx,STORE.floor+height/2+.10,cz-width/2+(i+.5)*step,m);emissive(layers.lighting,.025,.025,width,cx+.04,STORE.floor+.13,cz,C.light,5)}
+function track(x1,z1,x2,z2,count=5){const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz),ang=-Math.atan2(dz,dx);const q=box(layers.lighting,len,.028,.045,(x1+x2)/2,STORE.ceiling-.12,(z1+z2)/2,mat(0x08090a,.3,.25));q.rotation.y=ang;for(let i=0;i<count;i++){const t=(i+.5)/count,x=x1+dx*t,z=z1+dz*t;box(layers.lighting,.10,.15,.10,x,STORE.ceiling-.20,z,mat(0x08090a,.3,.25));const s=new THREE.SpotLight(C.light,13,5.5,Math.PI/7,.45,1.3);s.position.set(x,STORE.ceiling-.25,z);s.target.position.set(x,STORE.floor,z);layers.lighting.add(s,s.target)}}
+function ring(cx,cz,r){const curve=new THREE.EllipseCurve(0,0,r,r,0,Math.PI*2);const pts=curve.getPoints(96).map(p=>new THREE.Vector3(p.x,0,p.y));const loop=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:C.gold}));loop.position.set(cx,STORE.ceiling-.28,cz);layers.lighting.add(loop);const p=new THREE.PointLight(C.light,26,6,1.7);p.position.set(cx,STORE.ceiling-.35,cz);layers.lighting.add(p)}
+function sprite(text,border){const c=document.createElement("canvas");c.width=1024;c.height=256;const g=c.getContext("2d");g.fillStyle="rgba(10,12,15,.88)";g.fillRect(18,35,988,186);g.strokeStyle="#"+border.toString(16).padStart(6,"0");g.lineWidth=5;g.strokeRect(18,35,988,186);g.fillStyle="#fff";g.font="700 66px Arial";g.textAlign="center";g.textBaseline="middle";g.fillText(text,512,128);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}))}
+function marker(name,color,x,z){const g=new THREE.Group();const p=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.08,24),mat(color,.4,.05,{emissive:color,emissiveIntensity:.4}));p.position.y=.07;g.add(p);box(g,.025,1.1,.025,0,.58,0,mat(color,.4,.05,{emissive:color,emissiveIntensity:.4}));const s=sprite(name,color);s.position.y=1.45;s.scale.set(2.6,.58,1);g.add(s);g.position.set(x,STORE.floor,z);layers.markers.add(g)}
+function wallArt(x,z,index){const frame=box(layers.branding,.055,1.32,.84,x,STORE.floor+1.35,z,mat(C.gold,.28,.55));const insert=box(layers.branding,.065,1.20,.72,x+.04,STORE.floor+1.35,z,mat(0x111318,.58,.05));const geo=new THREE.TorusGeometry(.18+.03*index,.018,8,32);const art=new THREE.Mesh(geo,mat(C.gold,.25,.6,{emissive:C.gold,emissiveIntensity:.15}));art.position.set(x+.075,STORE.floor+1.35,z);art.rotation.y=Math.PI/2;layers.branding.add(art)}
+
+function build(){
+  const floorMat=new THREE.MeshStandardMaterial({map:tileTexture(),roughness:.58,metalness:.02});
+  box(layers.floor,W,.045,D,CX,STORE.floor+.025,CZ,floorMat);
+  const edge=mat(C.obsidian,.48,.08);
+  box(layers.floor,W,.024,.07,CX,STORE.floor+.055,STORE.z0+.04,edge);
+  box(layers.floor,W,.024,.07,CX,STORE.floor+.055,STORE.z1-.04,edge);
+  box(layers.floor,.07,.024,D,STORE.x0+.04,STORE.floor+.055,CZ,edge);
+  box(layers.floor,.07,.024,D,STORE.x1-.04,STORE.floor+.055,CZ,edge);
+
+  const ivory=mat(C.ivory,.70,.01),ivory2=mat(C.ivory2,.74,.01),dark=mat(C.obsidian,.45,.08);
+  box(layers.walls,.07,H,D,STORE.x0+.04,STORE.floor+H/2,CZ,ivory);
+  box(layers.walls,.07,H,D,STORE.x1-.04,STORE.floor+H/2,CZ,dark);
+  box(layers.walls,W,H,.07,CX,STORE.floor+H/2,STORE.z1-.04,ivory2);
+
+  const partitionZ=-4.82,partitionX=.62,partitionW=7.35;
+  box(layers.walls,partitionW,H*.90,.08,partitionX,STORE.floor+H*.45,partitionZ,ivory);
+  box(layers.walls,partitionW*.70,.46,.09,partitionX-.8,STORE.floor+.23,partitionZ-.05,dark);
+  emissive(layers.branding,partitionW*.82,.022,.028,partitionX,STORE.floor+1.08,partitionZ-.065,C.gold,1.0);
+
+  const stone=new THREE.MeshStandardMaterial({map:stoneTexture(),roughness:.48,metalness:.03});
+  box(layers.walls,.075,H*.87,5.9,STORE.x1-.10,STORE.floor+H*.46,-2.1,stone);
+  slatsZ(STORE.x1-.17,-5.85,1.95,H*.84);
+
+  const featureZ=STORE.z0+.12,featureX=5.12,featureW=3.1;
+  box(layers.walls,featureW,H*.86,.075,featureX,STORE.floor+H*.44,featureZ,stone);
+  slatsX(featureX-featureW/2-.48,featureZ+.035,.72,H*.80);
+  plane(layers.branding,2.65,1.30,featureX,STORE.floor+1.40,featureZ+.045,0,new THREE.MeshBasicMaterial({map:logoTexture(),transparent:true,depthWrite:false}));
+  const torus=new THREE.Mesh(new THREE.TorusGeometry(.27,.025,12,64),mat(C.gold,.25,.65,{emissive:C.gold,emissiveIntensity:.45}));torus.position.set(featureX,STORE.floor+1.93,featureZ+.01);torus.rotation.x=Math.PI/2;layers.branding.add(torus);
+
+  const playWallX=STORE.x0+.11;
+  box(layers.walls,.08,H*.86,4.2,playWallX,STORE.floor+H*.44,-1.9,dark);
+  wallArt(playWallX+.055,-3.25,0);wallArt(playWallX+.055,-2.0,1);wallArt(playWallX+.055,-.75,2);
+
+  const glassMat=new THREE.MeshPhysicalMaterial({color:C.glass,transparent:true,opacity:.18,roughness:.08,metalness:.02,transmission:.55,side:THREE.DoubleSide});
+  const mullion=mat(0x181b1f,.35,.35),front=STORE.z0+.02;
+  const panels=[[STORE.x0+.15,-5.85],[-5.55,-4.05],[-3.75,-2.15],[-1.85,-.25],[.05,1.75],[2.05,3.55],[5.65,STORE.x1-.15]];
+  for(const p of panels){const a=p[0],b=p[1],width=b-a;if(width<=.05)continue;plane(layers.glass,width,H*.78,(a+b)/2,STORE.floor+H*.48,front,0,glassMat);box(layers.glass,.045,H*.82,.045,a,STORE.floor+H*.48,front-.02,mullion);box(layers.glass,.045,H*.82,.045,b,STORE.floor+H*.48,front-.02,mullion)}
+  box(layers.glass,W,.055,.055,CX,STORE.floor+H*.87,front-.02,mullion);
+
+  const ceilingMat=new THREE.MeshStandardMaterial({map:ceilingTexture(),roughness:.72,side:THREE.DoubleSide});
+  box(layers.ceiling,W,.055,D,CX,STORE.ceiling,CZ,ceilingMat);
+  emissive(layers.lighting,W-.5,.025,.025,CX,STORE.ceiling-.10,STORE.z0+.22);
+  emissive(layers.lighting,W-.5,.025,.025,CX,STORE.ceiling-.10,STORE.z1-.22);
+  emissive(layers.lighting,.025,.025,D-.5,STORE.x0+.22,STORE.ceiling-.10,CZ);
+  emissive(layers.lighting,.025,.025,D-.5,STORE.x1-.22,STORE.ceiling-.10,CZ);
+  for(const x of [-4.8,-1.8,1.2,4.2])track(x,STORE.z0+.65,x,STORE.z1-.70,6);
+  ring(-3.4,-1.35,1.0);ring(-3.4,1.00,1.0);
+
+  marker("ENTRANCE",0x4ca5ff,4.55,STORE.z0+.35);
+  marker("TOILET",0x63df91,-6.25,-3.25);
+  marker("SAFE",0xffca55,-.65,-4.10);
+  layers.markers.visible=false;
+}
+build();
+
+for(const el of document.querySelectorAll("[data-layer]")){
+  el.addEventListener("change",()=>{layers[el.dataset.layer].visible=el.checked});
+}
+
+function setView(v){
+  controls.target.set(CX,STORE.floor+.82,CZ);
+  if(v==="top")camera.position.set(CX,18,CZ+.01);
+  else if(v==="entrance")camera.position.set(4.55,STORE.floor+1.65,STORE.z0-5.5);
+  else if(v==="play")camera.position.set(-6.0,STORE.floor+1.55,-.8);
+  else camera.position.set(14,9,-18);
+  controls.update();
+}
+document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),-STORE.floor);
+canvas.addEventListener("pointermove",e=>{const r=canvas.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);const p=new THREE.Vector3();if(raycaster.ray.intersectPlane(floorPlane,p))document.getElementById("coords").textContent="X "+p.x.toFixed(2)+" · Z "+p.z.toFixed(2)});
+
+document.getElementById("menuBtn").addEventListener("click",()=>document.getElementById("sidebar").classList.toggle("open"));
+
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,pr=Math.min(devicePixelRatio,2);if(canvas.width!==Math.floor(w*pr)||canvas.height!==Math.floor(h*pr)){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}
+function animate(){requestAnimationFrame(animate);resize();controls.update();renderer.render(scene,camera)}
+setView("hero");animate();
+</script>
+</body>
+</html>

@@ -59,6 +59,32 @@
       <p class="hint">The OBJ is bundled and loads automatically. It is hidden by default so you see the clean design rather than demolition clutter. Enable <b>Open roof</b> to clip the scan ceiling and inspect the interior from above.</p>
     </section>
 
+    <section class="editor-panel">
+      <h3>Layout editor</h3>
+      <div class="editor-grid">
+        <button data-editor-mode="orbit" class="active">Orbit</button>
+        <button data-editor-mode="wall">Draw wall</button>
+        <button data-editor-mode="select">Select</button>
+        <button data-editor-mode="place:display">Display case</button>
+        <button data-editor-mode="place:counter">Counter</button>
+        <button data-editor-mode="place:table">Play table</button>
+        <button data-editor-mode="place:chair">Chair</button>
+      </div>
+      <label>Grid snap
+        <select id="snapSize">
+          <option value="0.1">10 cm</option>
+          <option value="0.25" selected>25 cm</option>
+          <option value="0.5">50 cm</option>
+        </select>
+      </label>
+      <div class="buttons">
+        <button id="undoEditor">Undo</button>
+        <button id="deleteEditor">Delete selected</button>
+      </div>
+      <p id="editorStatus" class="hint">Orbit / inspect</p>
+      <p class="hint">Draw walls with two floor clicks. Furniture is placed with one click. Select + Delete removes editor-created items only.</p>
+    </section>
+
     <section>
       <h3>Locked corrections</h3>
       <label><input type="checkbox" id="markersToggle"> Show locations</label>

@@ -56,7 +56,9 @@ const glassRoot=new THREE.Group();
 const markerRoot=new THREE.Group();
 const existingRoot=new THREE.Group();
 existingRoot.name='existing-building-layout';
-scene.add(scanRoot,floorRoot,wallRoot,existingRoot,ceilingRoot,lightRoot,brandRoot,glassRoot,markerRoot);
+const furnitureRoot=new THREE.Group();
+furnitureRoot.name='furniture-layout';
+scene.add(scanRoot,floorRoot,wallRoot,existingRoot,furnitureRoot,ceilingRoot,lightRoot,brandRoot,glassRoot,markerRoot);
 
 scene.add(new THREE.HemisphereLight(0xffead0,0x11151a,1.2));
 const key=new THREE.DirectionalLight(0xffe0aa,1.2);key.position.set(-8,12,-4);scene.add(key);
@@ -199,6 +201,76 @@ function wallZWithDoor(x,z1,z2,doorZ,doorW=.95,flip=false){
   box(existingRoot,.10,H*.90-2.12,doorW+.08,x,STORE.floor+2.12+(H*.90-2.12)/2,doorZ,mat(C.ivory2,.73,.01));
   doorLeafZ(x+.025,doorZ-gap,doorW,Math.PI*.38,flip);
 }
+
+function furnitureMat(color,rough=.5,metal=.05,extra={}){
+  return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal,...extra});
+}
+function addDisplayCase(x,z,w=1.8,d=.55,h=1.25,ry=0){
+  const g=new THREE.Group();
+  const base=box(g,w,.28,d,0,.14,0,furnitureMat(C.obsidian,.42,.12));
+  const frame=box(g,w,.06,d,0,h-.03,0,furnitureMat(C.gold,.3,.55));
+  const glass=new THREE.Mesh(
+    new THREE.BoxGeometry(w-.06,h-.34,d-.06),
+    new THREE.MeshPhysicalMaterial({color:0xbfd0d8,transparent:true,opacity:.18,roughness:.08,metalness:.02,transmission:.6})
+  );
+  glass.position.y=.28+(h-.34)/2;
+  g.add(glass);
+  g.position.set(x,STORE.floor,z);g.rotation.y=ry;furnitureRoot.add(g);return g;
+}
+function addCounter(x,z,w=2.2,d=.75,h=.95,ry=0){
+  const g=new THREE.Group();
+  box(g,w,h,d,0,h/2,0,furnitureMat(0x1d1f22,.48,.08));
+  box(g,w+.03,.055,d+.03,0,h+.03,0,furnitureMat(C.gold,.28,.5));
+  g.position.set(x,STORE.floor,z);g.rotation.y=ry;furnitureRoot.add(g);return g;
+}
+function addPlayTable(x,z,w=1.6,d=.8,ry=0){
+  const g=new THREE.Group();
+  box(g,w,.06,d,0,.76,0,furnitureMat(0x2a2b2f,.62,.04));
+  for(const sx of [-1,1])for(const sz of [-1,1]){
+    box(g,.06,.74,.06,sx*(w/2-.12),.37,sz*(d/2-.12),furnitureMat(C.obsidian,.45,.14));
+  }
+  g.position.set(x,STORE.floor,z);g.rotation.y=ry;furnitureRoot.add(g);return g;
+}
+function addChair(x,z,ry=0){
+  const g=new THREE.Group();
+  box(g,.44,.05,.44,0,.46,0,furnitureMat(0x222428,.58,.04));
+  box(g,.05,.44,.05,-.17,.22,-.17,furnitureMat(C.obsidian,.45,.12));
+  box(g,.05,.44,.05,.17,.22,-.17,furnitureMat(C.obsidian,.45,.12));
+  box(g,.05,.44,.05,-.17,.22,.17,furnitureMat(C.obsidian,.45,.12));
+  box(g,.05,.44,.05,.17,.22,.17,furnitureMat(C.obsidian,.45,.12));
+  box(g,.44,.52,.05,0,.77,.195,furnitureMat(0x222428,.58,.04));
+  g.position.set(x,STORE.floor,z);g.rotation.y=ry;furnitureRoot.add(g);return g;
+}
+function buildFurniture(){
+  furnitureRoot.clear();
+
+  // Front / retail display run
+  addDisplayCase(-5.55,-8.95,1.7,.55,1.25,0);
+  addDisplayCase(-3.55,-8.95,1.7,.55,1.25,0);
+  addDisplayCase(-1.55,-8.95,1.7,.55,1.25,0);
+
+  // Premium slab / raw card display on right wall
+  addDisplayCase(6.55,-5.95,1.6,.5,1.3,Math.PI/2);
+  addDisplayCase(6.55,-3.95,1.6,.5,1.3,Math.PI/2);
+
+  // Main service / checkout counter
+  addCounter(3.8,-7.6,2.4,.8,.95,0);
+
+  // Play area: 4 tables, 4 seats each
+  const tables=[[-4.8,-1.8],[-2.6,-1.8],[-4.8,.3],[-2.6,.3]];
+  for(const [x,z] of tables){
+    addPlayTable(x,z,1.55,.8,0);
+    addChair(x,z-.72,0);
+    addChair(x,z+.72,Math.PI);
+    addChair(x-.95,z,Math.PI/2);
+    addChair(x+.95,z,-Math.PI/2);
+  }
+
+  // Rear accessory/sealed display
+  addDisplayCase(.8,2.45,2.0,.5,1.25,0);
+  addDisplayCase(3.15,2.45,2.0,.5,1.25,0);
+}
+
 function buildExistingLayout(){
   const wall=mat(C.ivory2,.74,.01);
   const core=mat(0x2a2b2d,.58,.05);
@@ -325,6 +397,7 @@ function buildDesign(){
 }
 
 buildDesign();
+buildFurniture();
 
 // Load the actual bundled OBJ/MTL automatically.
 async function loadScan(){
@@ -370,6 +443,7 @@ document.getElementById('scanOpacity').addEventListener('input',updateScanOpacit
 document.getElementById('floorToggle').addEventListener('change',e=>floorRoot.visible=e.target.checked);
 document.getElementById('wallsToggle').addEventListener('change',e=>wallRoot.visible=e.target.checked);
 document.getElementById('existingToggle').addEventListener('change',e=>existingRoot.visible=e.target.checked);
+document.getElementById('furnitureToggle').addEventListener('change',e=>furnitureRoot.visible=e.target.checked);
 document.getElementById('ceilingToggle').addEventListener('change',e=>ceilingRoot.visible=e.target.checked);
 
 function setOpenRoof(enabled){

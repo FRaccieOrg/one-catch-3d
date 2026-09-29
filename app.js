@@ -24,6 +24,22 @@ const W=STORE.x1-STORE.x0;
 const D=STORE.z1-STORE.z0;
 const H=STORE.ceiling-STORE.floor;
 
+// Actual leased One Catch unit inside the larger shopping complex.
+// This polygon follows the yellow-highlighted store boundary from the supplied plan.
+// Coordinates are mapped to the existing OBJ coordinate frame.
+const STORE_POLYGON=[
+  new THREE.Vector2(-7.15, 3.05),  // rear-left
+  new THREE.Vector2(-2.95, 3.18),  // rear upper run
+  new THREE.Vector2(-0.25, 1.55),  // diagonal transition
+  new THREE.Vector2( 7.18, 1.55),  // rear-right
+  new THREE.Vector2( 7.18,-9.72),  // front-right
+  new THREE.Vector2(-2.20,-9.72),  // front-left of main shop
+  new THREE.Vector2(-2.20,-4.65),  // stair/core notch right edge
+  new THREE.Vector2(-7.15,-4.65)   // stair/core notch top-left
+];
+const FRONT_X0=-2.20;
+const FRONT_X1=7.18;
+
 const canvas=document.getElementById('scene');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -314,23 +330,57 @@ function buildExistingLayout(){
   existingWallZ(STORE.x0+9.58,STORE.z0+4.55,STORE.z0+7.55,.09,sk).position.y=STORE.floor+.065;
 }
 
+
+function polygonHorizontal(parent,points,y,material,thickness=.045){
+  const shape=new THREE.Shape();
+  shape.moveTo(points[0].x,points[0].y);
+  for(let i=1;i<points.length;i++) shape.lineTo(points[i].x,points[i].y);
+  shape.closePath();
+
+  const geo=new THREE.ExtrudeGeometry(shape,{
+    depth:thickness,
+    bevelEnabled:false,
+    steps:1
+  });
+  // Extrusion is along local Z. Rotate so X/Y shape becomes world X/Z.
+  geo.rotateX(Math.PI/2);
+  const mesh=new THREE.Mesh(geo,material);
+  mesh.position.y=y;
+  mesh.castShadow=false;
+  mesh.receiveShadow=true;
+  parent.add(mesh);
+  return mesh;
+}
+function perimeterWall(parent,a,b,height,material,thickness=.09){
+  const dx=b.x-a.x,dz=b.y-a.y;
+  const len=Math.hypot(dx,dz);
+  const q=box(parent,len,height,thickness,(a.x+b.x)/2,STORE.floor+height/2,(a.y+b.y)/2,material);
+  q.rotation.y=-Math.atan2(dz,dx);
+  return q;
+}
+function buildStorePerimeter(){
+  const ivory=mat(C.ivory,.70,.01);
+  const dark=mat(C.obsidian,.45,.08);
+
+  // All yellow-highlighted boundary segments except the glazed front façade.
+  for(let i=0;i<STORE_POLYGON.length;i++){
+    const a=STORE_POLYGON[i],b=STORE_POLYGON[(i+1)%STORE_POLYGON.length];
+    const isFront=Math.abs(a.y-STORE.z0)<.03 && Math.abs(b.y-STORE.z0)<.03;
+    if(isFront) continue;
+    const rightSide=Math.abs(a.x-STORE.x1)<.08 && Math.abs(b.x-STORE.x1)<.08;
+    perimeterWall(wallRoot,a,b,H,rightSide?dark:ivory,.09);
+  }
+}
+
 function buildDesign(){
-  // Warm Ivory floor
+  // Warm Ivory floor clipped to the actual leased-unit polygon.
   const tile=makeTile();
   const floorMat=new THREE.MeshStandardMaterial({map:tile,roughness:.58,metalness:.02});
-  box(floorRoot,W,.045,D,CX,STORE.floor+.025,CZ,floorMat);
-  // Obsidian edge reveal
-  const edge=mat(C.obsidian,.48,.08);
-  box(floorRoot,W,.024,.07,CX,STORE.floor+.055,STORE.z0+.04,edge);
-  box(floorRoot,W,.024,.07,CX,STORE.floor+.055,STORE.z1-.04,edge);
-  box(floorRoot,.07,.024,D,STORE.x0+.04,STORE.floor+.055,CZ,edge);
-  box(floorRoot,.07,.024,D,STORE.x1-.04,STORE.floor+.055,CZ,edge);
+  polygonHorizontal(floorRoot,STORE_POLYGON,STORE.floor+.01,floorMat,.045);
 
-  // Architectural perimeter. Front is glass, so don't close it with a wall.
+  // True non-rectangular store perimeter from the highlighted lease boundary.
   const ivory=mat(C.ivory,.70,.01), ivory2=mat(C.ivory2,.74,.01), dark=mat(C.obsidian,.45,.08);
-  box(wallRoot,.07,H,D,STORE.x0+.04,STORE.floor+H/2,CZ,ivory);
-  box(wallRoot,.07,H,D,STORE.x1-.04,STORE.floor+H/2,CZ,dark);
-  box(wallRoot,W,H,.07,CX,STORE.floor+H/2,STORE.z1-.04,ivory2);
+  buildStorePerimeter();
 
   // Existing fixed internal walls and door openings come from the supplied lease plan.
   buildExistingLayout();
@@ -362,10 +412,14 @@ function buildDesign(){
   const glassMat=new THREE.MeshPhysicalMaterial({color:C.glass,transparent:true,opacity:.18,roughness:.08,metalness:.02,transmission:.55,side:THREE.DoubleSide});
   const mullion=mat(0x181b1f,.35,.35);
   const front=STORE.z0+.02;
+  // Only the main shop frontage is part of the One Catch unit.
+  // The left-hand shopping-complex/core frontage is deliberately excluded.
   const panels=[
-    [STORE.x0+.15,-5.85],[-5.55,-4.05],[-3.75,-2.15],[-1.85,-.25],[.05,1.75],[2.05,3.55],
-    // confirmed entrance is around bottom-right; leave a broad gap before last panel
-    [5.65,STORE.x1-.15]
+    [FRONT_X0+.12,-.45],
+    [-.15,1.65],
+    [1.95,3.55],
+    // broad customer entrance gap
+    [5.55,FRONT_X1-.12]
   ];
   for(const [a,b] of panels){
     const width=b-a;
@@ -374,20 +428,19 @@ function buildDesign(){
     box(glassRoot,.045,H*.82,.045,a,STORE.floor+H*.48,front-.02,mullion);
     box(glassRoot,.045,H*.82,.045,b,STORE.floor+H*.48,front-.02,mullion);
   }
-  box(glassRoot,W,.055,.055,CX,STORE.floor+H*.87,front-.02,mullion);
+  box(glassRoot,FRONT_X1-FRONT_X0,.055,.055,(FRONT_X0+FRONT_X1)/2,STORE.floor+H*.87,front-.02,mullion);
 
   // Ceiling and lighting
   const ceilTex=makeCeiling();
   const ceilMat=new THREE.MeshStandardMaterial({map:ceilTex,roughness:.72,side:THREE.DoubleSide});
-  box(ceilingRoot,W,.055,D,CX,STORE.ceiling,CZ,ceilMat);
-  // Perimeter glow
-  emissive(lightRoot,W-.5,.025,.025,CX,STORE.ceiling-.10,STORE.z0+.22);
-  emissive(lightRoot,W-.5,.025,.025,CX,STORE.ceiling-.10,STORE.z1-.22);
-  emissive(lightRoot,.025,.025,D-.5,STORE.x0+.22,STORE.ceiling-.10,CZ);
-  emissive(lightRoot,.025,.025,D-.5,STORE.x1-.22,STORE.ceiling-.10,CZ);
+  polygonHorizontal(ceilingRoot,STORE_POLYGON,STORE.ceiling,ceilMat,.055);
+
+  // Front architectural glow only on the actual One Catch frontage.
+  emissive(lightRoot,FRONT_X1-FRONT_X0-.35,.025,.025,(FRONT_X0+FRONT_X1)/2,STORE.ceiling-.10,STORE.z0+.22);
 
   // Track lines follow the long room axes.
-  for(const x of [-4.8,-1.8,1.2,4.2])track(x,STORE.z0+.65,x,STORE.z1-.70,6);
+  track(-4.8,STORE.z0+5.35,-4.8,STORE.z1-.55,4);
+  for(const x of [-1.8,1.2,4.2])track(x,STORE.z0+.65,x,STORE.z1-.70,6);
   // Play-area ring lights only; furniture comes later.
   ring(-3.4,-1.35,1.0);ring(-3.4,1.00,1.0);
 

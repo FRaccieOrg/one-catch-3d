@@ -14,7 +14,8 @@ const C={
 // The complete scan is larger; this box tracks the principal retail volume visible in the supplied plan/photos.
 const STORE={
   x0:-7.15, x1:7.18,
-  z0:-9.72, z1:4.18,
+  // Actual One Catch unit depth extracted from the yellow plan outline.
+  z0:-5.24, z1:3.18,
   floor:-1.30,
   ceiling:1.10
 };
@@ -24,23 +25,38 @@ const W=STORE.x1-STORE.x0;
 const D=STORE.z1-STORE.z0;
 const H=STORE.ceiling-STORE.floor;
 
-// Actual leased One Catch unit inside the larger shopping complex.
-// This polygon follows the yellow-highlighted store boundary from the supplied plan.
-// Coordinates are mapped to the existing OBJ coordinate frame.
-const STORE_POLYGON=[
-  // Clockwise trace of the yellow-highlighted lease boundary in the supplied plan.
-  // The left/bottom rectangle is an adjacent stair/core volume and is NOT part of the shop.
-  new THREE.Vector2(-7.15, 3.18),  // A: upper-left corner
-  new THREE.Vector2(-2.86, 4.14),  // B: raised upper corner
-  new THREE.Vector2(-0.29, 2.44),  // C: end of diagonal return
-  new THREE.Vector2( 7.08, 2.48),  // D: long upper-right run
-  new THREE.Vector2( 7.18,-9.68),  // E: front-right
-  new THREE.Vector2(-2.29,-9.72),  // F: front-left of the actual shop frontage
-  new THREE.Vector2(-2.29,-4.95),  // G: up along right edge of stair/core exclusion
-  new THREE.Vector2(-7.15,-4.87)   // H: left along top of stair/core exclusion
+// Actual leased One Catch unit traced from the yellow outline in the supplied plan.
+// Source image: 1281x555. Coordinates below are image pixels (X right, Y down).
+const PLAN_OUTLINE_PX=[
+  [242,303], // A left edge at top of excluded stair/core notch
+  [244,112], // B upper-left
+  [410, 89], // C highest corner
+  [520,132], // D diagonal return / shallow concave corner
+  [798,129], // E upper-right
+  [800,417], // F front-right
+  [431,417], // G front-left of actual shop frontage
+  [431,303]  // H top-right of excluded stair/core notch
 ];
-const FRONT_X0=-2.29;
-const FRONT_X1=7.18;
+
+// Uniform image-to-world mapping. This preserves all plan angles and aspect ratio.
+// The 558 px total X-span maps to the 14.33-unit OBJ X-span.
+const PLAN_X_MIN_PX=242;
+const PLAN_X_MAX_PX=800;
+const PLAN_FRONT_Y_PX=417;
+const PLAN_SCALE=(STORE.x1-STORE.x0)/(PLAN_X_MAX_PX-PLAN_X_MIN_PX);
+const PLAN_FRONT_Z=STORE.z1;
+
+function planPoint(px,py){
+  return new THREE.Vector2(
+    STORE.x0+(px-PLAN_X_MIN_PX)*PLAN_SCALE,
+    PLAN_FRONT_Z-(PLAN_FRONT_Y_PX-py)*PLAN_SCALE
+  );
+}
+const STORE_POLYGON=PLAN_OUTLINE_PX.map(([x,y])=>planPoint(x,y));
+const FRONT_X0=planPoint(431,417).x;
+const FRONT_X1=planPoint(800,417).x;
+const FRONT_Z=PLAN_FRONT_Z;
+
 
 const canvas=document.getElementById('scene');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
@@ -265,16 +281,16 @@ function buildFurniture(){
   furnitureRoot.clear();
 
   // Front / retail display run — only on the actual One Catch frontage.
-  addDisplayCase(-1.20,-8.95,1.55,.55,1.25,0);
-  addDisplayCase(0.75,-8.95,1.55,.55,1.25,0);
-  addDisplayCase(2.70,-8.95,1.55,.55,1.25,0);
+  addDisplayCase(-1.20,2.55,1.55,.55,1.25,0);
+  addDisplayCase(0.75,2.55,1.55,.55,1.25,0);
+  addDisplayCase(2.70,2.55,1.55,.55,1.25,0);
 
   // Premium slab / raw card display on right wall
-  addDisplayCase(6.55,-5.95,1.6,.5,1.3,Math.PI/2);
-  addDisplayCase(6.55,-3.95,1.6,.5,1.3,Math.PI/2);
+  addDisplayCase(6.55,-3.55,1.6,.5,1.3,Math.PI/2);
+  addDisplayCase(6.55,-1.65,1.6,.5,1.3,Math.PI/2);
 
   // Main service / checkout counter
-  addCounter(3.8,-7.6,2.4,.8,.95,0);
+  addCounter(3.8,1.55,2.4,.8,.95,0);
 
   // Play area: 4 tables, 4 seats each
   const tables=[[-4.8,-1.8],[-2.6,-1.8],[-4.8,.3],[-2.6,.3]];
@@ -287,8 +303,8 @@ function buildFurniture(){
   }
 
   // Rear accessory/sealed display, inside the sloped/recessed rear boundary.
-  addDisplayCase(.8,1.05,1.8,.5,1.25,0);
-  addDisplayCase(3.15,1.05,1.8,.5,1.25,0);
+  addDisplayCase(.8,-3.80,1.8,.5,1.25,0);
+  addDisplayCase(3.15,-3.80,1.8,.5,1.25,0);
 }
 
 function buildExistingLayout(){
@@ -389,7 +405,7 @@ function buildDesign(){
   slatsZ(STORE.x1-.17,-5.85,1.95,H*.84);
 
   // Entrance/brand feature to the right of the confirmed bottom-right entrance.
-  const featureZ=STORE.z0+.12, featureX=5.12, featureW=3.1;
+  const featureZ=FRONT_Z-.12, featureX=5.12, featureW=3.1;
   box(wallRoot,featureW,H*.86,.075,featureX,STORE.floor+H*.44,featureZ,stoneMat);
   slatsX(featureX-featureW/2-.48,featureZ+.035,.72,H*.80);
   logoPlane(featureX,STORE.floor+1.40,featureZ+.045,0,2.65,1.30);
@@ -408,7 +424,7 @@ function buildDesign(){
   // Front glass façade, split into panels and leaving entrance gaps.
   const glassMat=new THREE.MeshPhysicalMaterial({color:C.glass,transparent:true,opacity:.18,roughness:.08,metalness:.02,transmission:.55,side:THREE.DoubleSide});
   const mullion=mat(0x181b1f,.35,.35);
-  const front=STORE.z0+.02;
+  const front=FRONT_Z-.02;
   // Only the main shop frontage is part of the One Catch unit.
   // The left-hand shopping-complex/core frontage is deliberately excluded.
   const panels=[
@@ -436,13 +452,13 @@ function buildDesign(){
   emissive(lightRoot,FRONT_X1-FRONT_X0-.35,.025,.025,(FRONT_X0+FRONT_X1)/2,STORE.ceiling-.10,STORE.z0+.22);
 
   // Track lines follow the long room axes.
-  track(-4.8,STORE.z0+5.35,-4.8,STORE.z1-.55,4);
-  for(const x of [-1.8,1.2,4.2])track(x,STORE.z0+.65,x,STORE.z1-.70,6);
+  track(-4.8,STORE.z0+.55,-4.8,.05,4);
+  for(const x of [-1.8,1.2,4.2])track(x,STORE.z0+.55,x,STORE.z1-.70,6);
   // Play-area ring lights only; furniture comes later.
   ring(-3.4,-1.35,1.0);ring(-3.4,1.00,1.0);
 
   // Markers based on the corrected annotated plan.
-  marker('ENTRANCE',0x4ca5ff,4.55,STORE.z0+.35);
+  marker('ENTRANCE',0x4ca5ff,4.55,FRONT_Z-.35);
   marker('TOILET',0x63df91,-6.25,-3.25);
   marker('SAFE',0xffca55,-.65,-4.10);
   markerRoot.visible=false;
@@ -526,7 +542,7 @@ document.getElementById('markersToggle').addEventListener('change',e=>markerRoot
 function setView(v){
   controls.target.set(CX,STORE.floor+.85,CZ);
   if(v==='top')camera.position.set(CX,18,CZ+.01);
-  else if(v==='entrance')camera.position.set(4.55,STORE.floor+1.65,STORE.z0-5.5);
+  else if(v==='entrance')camera.position.set(4.55,STORE.floor+1.65,FRONT_Z+5.5);
   else if(v==='play')camera.position.set(-6.0,STORE.floor+1.55,-.8);
   else camera.position.set(14,9,-18);
   controls.update();

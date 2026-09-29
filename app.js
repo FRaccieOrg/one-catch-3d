@@ -58,7 +58,9 @@ const existingRoot=new THREE.Group();
 existingRoot.name='existing-building-layout';
 const furnitureRoot=new THREE.Group();
 furnitureRoot.name='furniture-layout';
-scene.add(scanRoot,floorRoot,wallRoot,existingRoot,furnitureRoot,ceilingRoot,lightRoot,brandRoot,glassRoot,markerRoot);
+const editorRoot=new THREE.Group();
+editorRoot.name='user-editor';
+scene.add(scanRoot,floorRoot,wallRoot,existingRoot,furnitureRoot,editorRoot,ceilingRoot,lightRoot,brandRoot,glassRoot,markerRoot);
 
 scene.add(new THREE.HemisphereLight(0xffead0,0x11151a,1.2));
 const key=new THREE.DirectionalLight(0xffe0aa,1.2);key.position.set(-8,12,-4);scene.add(key);
@@ -487,6 +489,123 @@ canvas.addEventListener('pointermove',e=>{
   raycaster.setFromCamera(pointer,camera);const p=new THREE.Vector3();
   if(raycaster.ray.intersectPlane(floorPlane,p))document.getElementById('coords').textContent=`X ${p.x.toFixed(2)} · Z ${p.z.toFixed(2)}`;
 });
+
+
+const editorState={
+  mode:'orbit',
+  wallStart:null,
+  selected:null,
+  snap:.25,
+  history:[]
+};
+
+function snapValue(v){ return Math.round(v/editorState.snap)*editorState.snap; }
+function floorPointFromEvent(e){
+  const r=canvas.getBoundingClientRect();
+  const p=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(p,camera);
+  const out=new THREE.Vector3();
+  return raycaster.ray.intersectPlane(floorPlane,out)?new THREE.Vector3(snapValue(out.x),STORE.floor,snapValue(out.z)):null;
+}
+function setEditorMode(mode){
+  editorState.mode=mode;
+  editorState.wallStart=null;
+  if(editorState.selected) setSelected(null);
+  document.querySelectorAll('[data-editor-mode]').forEach(b=>b.classList.toggle('active',b.dataset.editorMode===mode));
+  canvas.style.cursor=mode==='orbit'?'grab':'crosshair';
+  document.getElementById('editorStatus').textContent=
+    mode==='wall'?'Wall: click start and end point':
+    mode==='select'?'Select: click an editable object':
+    mode.startsWith('place:')?'Furniture: click floor to place':
+    'Orbit / inspect';
+}
+function setSelected(obj){
+  if(editorState.selected?.userData?.highlight){
+    editorState.selected.remove(editorState.selected.userData.highlight);
+    delete editorState.selected.userData.highlight;
+  }
+  editorState.selected=obj;
+  if(obj){
+    const box3=new THREE.Box3().setFromObject(obj);
+    const helper=new THREE.Box3Helper(box3,0xffcc66);
+    helper.userData.editorHelper=true;
+    obj.add(helper);obj.userData.highlight=helper;
+  }
+}
+function pushHistory(obj){ editorState.history.push(obj); }
+function addUserWall(a,b){
+  const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);
+  if(len<.2) return;
+  const g=new THREE.Group();g.userData.editorObject=true;g.userData.kind='wall';
+  const mesh=box(g,len,H*.9,.10,0,H*.45,0,mat(C.ivory2,.72,.01));
+  g.position.set((a.x+b.x)/2,STORE.floor,(a.z+b.z)/2);
+  g.rotation.y=-Math.atan2(dz,dx);
+  editorRoot.add(g);pushHistory(g);
+}
+function addEditorFurniture(kind,p){
+  const before=new Set(furnitureRoot.children);
+  let obj;
+  if(kind==='display') obj=addDisplayCase(p.x,p.z,1.8,.55,1.25,0);
+  else if(kind==='counter') obj=addCounter(p.x,p.z,2.2,.75,.95,0);
+  else if(kind==='table') obj=addPlayTable(p.x,p.z,1.55,.8,0);
+  else if(kind==='chair') obj=addChair(p.x,p.z,0);
+  if(!obj) return;
+  furnitureRoot.remove(obj);
+  obj.userData.editorObject=true;obj.userData.kind=kind;
+  editorRoot.add(obj);pushHistory(obj);
+}
+function deleteSelected(){
+  if(!editorState.selected) return;
+  const obj=editorState.selected;setSelected(null);
+  obj.parent?.remove(obj);
+}
+function undoEditor(){
+  const obj=editorState.history.pop();
+  if(!obj) return;
+  if(editorState.selected===obj)setSelected(null);
+  obj.parent?.remove(obj);
+}
+
+document.querySelectorAll('[data-editor-mode]').forEach(b=>b.addEventListener('click',()=>setEditorMode(b.dataset.editorMode)));
+document.getElementById('deleteEditor').addEventListener('click',deleteSelected);
+document.getElementById('undoEditor').addEventListener('click',undoEditor);
+document.getElementById('snapSize').addEventListener('change',e=>editorState.snap=+e.target.value);
+
+canvas.addEventListener('pointerdown',e=>{
+  if(editorState.mode==='orbit') return;
+  e.preventDefault();
+  const p=floorPointFromEvent(e);
+  if(editorState.mode==='wall'){
+    if(!p) return;
+    if(!editorState.wallStart){
+      editorState.wallStart=p;
+      document.getElementById('editorStatus').textContent=`Wall start: X ${p.x.toFixed(2)} · Z ${p.z.toFixed(2)} — click end`;
+    }else{
+      addUserWall(editorState.wallStart,p);
+      editorState.wallStart=null;
+      document.getElementById('editorStatus').textContent='Wall created — click next start';
+    }
+    return;
+  }
+  if(editorState.mode.startsWith('place:')){
+    if(p)addEditorFurniture(editorState.mode.split(':')[1],p);
+    return;
+  }
+  if(editorState.mode==='select'){
+    const r=canvas.getBoundingClientRect();
+    pointer.x=((e.clientX-r.left)/r.width)*2-1;
+    pointer.y=-((e.clientY-r.top)/r.height)*2+1;
+    raycaster.setFromCamera(pointer,camera);
+    const hits=raycaster.intersectObjects(editorRoot.children,true);
+    const hit=hits.find(h=>!h.object.userData.editorHelper);
+    if(!hit){setSelected(null);return;}
+    let obj=hit.object;
+    while(obj.parent!==editorRoot && obj.parent)obj=obj.parent;
+    setSelected(obj.parent===editorRoot?obj:null);
+  }
+});
+setEditorMode('orbit');
+
 
 function resize(){
   const w=canvas.clientWidth,h=canvas.clientHeight,pr=Math.min(devicePixelRatio,2);

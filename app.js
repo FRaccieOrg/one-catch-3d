@@ -31,7 +31,11 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.08;
 renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;\nrenderer.localClippingEnabled=true;\n\n// Open-roof clipping plane: removes scan geometry above the interior ceiling line.\nconst roofClipPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),STORE.ceiling-.08);
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.localClippingEnabled=true;
+
+// Open-roof clipping plane: removes scan geometry above the interior ceiling line.
+const roofClipPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),STORE.ceiling-.08);
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x0b0d10);
@@ -337,7 +341,8 @@ async function loadScan(){
         n.castShadow=false;n.receiveShadow=true;
         const mats=Array.isArray(n.material)?n.material:[n.material];
         mats.forEach(m=>{
-          m.transparent=true;m.opacity=.25;m.depthWrite=false;m.roughness=.72;\n          m.clippingPlanes=[];
+          m.transparent=true;m.opacity=.25;m.depthWrite=false;m.roughness=.72;
+          m.clippingPlanes=[];
         });
       }
     });
